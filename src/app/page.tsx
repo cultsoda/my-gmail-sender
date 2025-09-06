@@ -1,103 +1,172 @@
-import Image from "next/image";
+// src/app/page.tsx
+
+"use client";
+
+import { useSession, signIn, signOut } from "next-auth/react";
+import { useState, useMemo } from 'react';
+import dynamic from 'next/dynamic'; // next/dynamic을 import 합니다.
+
+// RichTextEditor를 dynamic import로 변경하고, SSR을 비활성화합니다.
+// 수정된 코드
+const RichTextEditor = dynamic(() => import('./components/RichTextEditor'), { 
+  ssr: false,
+  loading: () => <p className="p-3 bg-gray-700 border border-gray-600 rounded-md">에디터를 불러오는 중...</p>,
+});
+const MAX_RECIPIENTS = 300;
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const { data: session, status } = useSession();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+  const [recipients, setRecipients] = useState('');
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('<p>여기에 이메일 내용을 입력하세요...</p>');
+  const [isSending, setIsSending] = useState(false);
+  const [message, setMessage] = useState('');
+
+  // 이 부분부터 나머지 코드는 이전과 동일합니다.
+  const recipientCount = useMemo(() => {
+    if (recipients.trim() === '') return 0;
+    return recipients.split(/[\s,;]+/).filter(email => email.length > 0).length;
+  }, [recipients]);
+
+  const isRecipientLimitExceeded = recipientCount > MAX_RECIPIENTS;
+
+  // src/app/page.tsx 파일의 handleSubmit 함수만 교체
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (isRecipientLimitExceeded) {
+      setMessage(`최대 ${MAX_RECIPIENTS}명까지 보낼 수 있습니다.`);
+      return;
+    }
+    setIsSending(true);
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ recipients, subject, body }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || '알 수 없는 에러가 발생했습니다.');
+      }
+
+      setMessage(result.message);
+      // 성공 시 입력 필드 초기화 (선택사항)
+      setRecipients('');
+      setSubject('');
+      setBody('');
+
+    } catch (error: any) {
+      setMessage(`전송 실패: ${error.message}`);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  if (status === "loading") {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center">
+        <p>Loading...</p>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+    );
+  }
+
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gray-900 text-white">
+      <div className="w-full max-w-4xl">
+        {!session ? (
+          <div className="text-center">
+            <h1 className="text-4xl font-bold mb-6">로그인이 필요합니다.</h1>
+            <button
+              onClick={() => signIn("google")}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg"
+            >
+              Login with Google
+            </button>
+          </div>
+        ) : (
+          <div className="w-full">
+            <div className="flex justify-between items-center mb-10">
+              <div>
+                <h1 className="text-3xl font-bold">환영합니다, {session.user?.name} 님!</h1>
+                <p className="text-gray-400">{session.user?.email}</p>
+              </div>
+              <button
+                onClick={() => signOut()}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
+              >
+                Logout
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6 bg-gray-800 p-8 rounded-lg">
+              <div>
+                <label htmlFor="recipients" className="block text-sm font-medium text-gray-300 mb-2">
+                  받는 사람 ({recipientCount} / {MAX_RECIPIENTS} 명)
+                </label>
+                <textarea
+                  id="recipients"
+                  name="recipients"
+                  rows={4}
+                  className={`w-full p-3 bg-gray-700 border rounded-md focus:ring-2 text-white ${isRecipientLimitExceeded ? 'border-red-500 focus:ring-red-500' : 'border-gray-600 focus:ring-blue-500'}`}
+                  placeholder="test1@example.com, test2@example.com"
+                  value={recipients}
+                  onChange={(e) => setRecipients(e.target.value)}
+                  required
+                />
+                {isRecipientLimitExceeded && (
+                  <p className="mt-2 text-sm text-red-400">
+                    받는 사람 수가 최대 {MAX_RECIPIENTS}명을 초과할 수 없습니다.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="subject" className="block text-sm font-medium text-gray-300 mb-2">
+                  제목
+                </label>
+                <input
+                  type="text"
+                  id="subject"
+                  name="subject"
+                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 text-white"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  본문
+                </label>
+                <RichTextEditor
+                  content={body}
+                  onChange={(newContent) => setBody(newContent)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <button
+                  type="submit"
+                  disabled={isSending || isRecipientLimitExceeded}
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed"
+                >
+                  {isSending ? '전송 중...' : '이메일 일괄 발송'}
+                </button>
+                {message && <p className={message.includes('성공') ? 'text-green-400' : 'text-red-400'}>{message}</p>}
+              </div>
+            </form>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }

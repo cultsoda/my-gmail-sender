@@ -24,3 +24,15 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* src/app/globals.css 파일 맨 아래에 추가 */
+
+/* Tiptap 에디터 내부의 링크 스타일을 지정합니다. */
+.prose a {
+  text-decoration: underline; /* 밑줄 추가 */
+  color: #60a5fa; /* 링크 색상을 파란색 계열로 변경 (선택사항) */
+}
+
+.prose a:hover {
+  color: #93c5fd; /* 마우스를 올렸을 때 색상 변경 (선택사항) */
+}
