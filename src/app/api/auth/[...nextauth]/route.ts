@@ -57,7 +57,9 @@ export const authOptions: AuthOptions = {
     secret: process.env.NEXTAUTH_SECRET,
     // src/app/api/auth/[...nextauth]/route.ts 의 callbacks 부분만 수정
 
-    callbacks: {
+    // src/app/api/auth/[...nextauth]/route.ts 파일의 callbacks 부분만 교체
+
+      callbacks: {
         async jwt({ token, user, account }) {
             if (account && user) {
                 token.accessToken = account.access_token;
@@ -74,8 +76,12 @@ export const authOptions: AuthOptions = {
             return refreshAccessToken(token);
         },
         async session({ session, token }) {
-            if (token && session.user) {
-                session.user = token.user; // ✨ as any 제거
+            // ✨ token.user가 실제로 존재할 때만 session.user에 할당하도록 수정
+            if (token && session.user && token.user) {
+                session.user = token.user;
+            }
+            // token이 존재하면 accessToken과 error도 할당
+            if (token) {
                 session.accessToken = token.accessToken;
                 session.error = token.error;
             }
