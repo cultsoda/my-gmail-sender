@@ -7,7 +7,8 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  // 이 체크 덕분에 아래에서 session.user.email은 절대 null이 아님
+  
+  // 이 체크 덕분에 아래에서 session.user.email은 절대 null이 아닙니다.
   if (!session || !session.user?.email) {
     return NextResponse.json({ error: '인증되지 않은 사용자입니다.' }, { status: 401 });
   }
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { recipients, subject, body } = await req.json();
-  if (!recipients || !subject || !body) {
+  if (!recipients || !subject || body === undefined) {
     return NextResponse.json({ error: '필수 정보가 누락되었습니다.' }, { status: 400 });
   }
 
@@ -32,12 +33,14 @@ export async function POST(req: NextRequest) {
         },
     });
 
+    // ✨ TypeScript가 session.user.email이 유효하다고 확신할 수 있도록 from 주소를 명확하게 정의합니다.
+    const fromAddress = session.user.name
+      ? `"${session.user.name}" <${session.user.email}>`
+      : session.user.email;
+
     const mailPromises = recipientList.map((recipient: string) => {
         return transporter.sendMail({
-            // ✨ from 필드를 session.user.email이 유효하다고 보장된 상태에서 사용하도록 수정
-            from: session.user.name 
-              ? `"${session.user.name}" <${session.user.email}>` 
-              : session.user.email,
+            from: fromAddress, // 수정된 변수를 사용합니다.
             to: recipient,
             subject: subject,
             html: body,
@@ -50,7 +53,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('이메일 발송 중 에러 발생:', error);
-    console.error(JSON.stringify(error, null, 2));
     return NextResponse.json({ error: '이메일 발송 중 서버에서 오류가 발생했습니다.' }, { status: 500 });
   }
 }
