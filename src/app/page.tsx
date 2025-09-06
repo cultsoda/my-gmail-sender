@@ -33,6 +33,8 @@ export default function Home() {
 
   // src/app/page.tsx 파일의 handleSubmit 함수만 교체
 
+  // src/app/page.tsx 파일의 handleSubmit 함수만 교체
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (isRecipientLimitExceeded) {
@@ -58,13 +60,16 @@ export default function Home() {
       }
 
       setMessage(result.message);
-      // 성공 시 입력 필드 초기화 (선택사항)
       setRecipients('');
       setSubject('');
       setBody('');
 
-    } catch (error: any) {
-      setMessage(`전송 실패: ${error.message}`);
+    } catch (error: unknown) { // ✨ any 대신 unknown 사용
+      if (error instanceof Error) {
+        setMessage(`전송 실패: ${error.message}`);
+      } else {
+        setMessage('전송 실패: 알 수 없는 오류가 발생했습니다.');
+      }
     } finally {
       setIsSending(false);
     }

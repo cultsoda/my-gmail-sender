@@ -1,7 +1,7 @@
 // src/types/next-auth.d.ts
 
-import NextAuth, { DefaultSession, DefaultUser } from "next-auth"
-import { JWT, DefaultJWT } from "next-auth/jwt"
+import { DefaultSession, DefaultUser } from "next-auth"
+import { DefaultJWT } from "next-auth/jwt"
 
 declare module "next-auth" {
   interface Session {
@@ -10,10 +10,6 @@ declare module "next-auth" {
     user: {
       id: string;
     } & DefaultSession["user"];
-  }
-
-  interface User extends DefaultUser {
-    // 사용자 모델에 커스텀 속성을 추가할 수 있습니다.
   }
 }
 
