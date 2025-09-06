@@ -7,11 +7,11 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
+  // 이 체크 덕분에 아래에서 session.user.email은 절대 null이 아님
   if (!session || !session.user?.email) {
     return NextResponse.json({ error: '인증되지 않은 사용자입니다.' }, { status: 401 });
   }
 
-  // GMAIL_APP_PASSWORD가 설정되었는지 확인
   if (!process.env.GMAIL_APP_PASSWORD) {
     return NextResponse.json({ error: '서버에 앱 비밀번호가 설정되지 않았습니다.' }, { status: 500 });
   }
@@ -24,18 +24,20 @@ export async function POST(req: NextRequest) {
   const recipientList = recipients.split(/[\s,;]+/).filter((email: string) => email.length > 0);
 
   try {
-    // ✨ 인증 방식을 OAuth2에서 일반 로그인(앱 비밀번호) 방식으로 변경
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
             user: session.user.email,
-            pass: process.env.GMAIL_APP_PASSWORD, // OAuth 토큰 대신 앱 비밀번호 사용
+            pass: process.env.GMAIL_APP_PASSWORD,
         },
     });
 
     const mailPromises = recipientList.map((recipient: string) => {
         return transporter.sendMail({
-            from: session.user?.name ? `"${session.user.name}" <${session.user.email}>` : session.user?.email,
+            // ✨ from 필드를 session.user.email이 유효하다고 보장된 상태에서 사용하도록 수정
+            from: session.user.name 
+              ? `"${session.user.name}" <${session.user.email}>` 
+              : session.user.email,
             to: recipient,
             subject: subject,
             html: body,
@@ -48,7 +50,6 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('이메일 발송 중 에러 발생:', error);
-    // 에러 객체를 좀 더 자세히 로깅
     console.error(JSON.stringify(error, null, 2));
     return NextResponse.json({ error: '이메일 발송 중 서버에서 오류가 발생했습니다.' }, { status: 500 });
   }
