@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { google } from 'googleapis';
 
-// GET 요청: 모든 템플릿 목록 불러오기
+// GET 요청: 모든 템플릿 목록 불러오기 (수정 없음)
 export async function GET(req: NextRequest) {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     if (!token || !token.accessToken) {
@@ -18,7 +18,6 @@ export async function GET(req: NextRequest) {
         
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: process.env.GOOGLE_SHEET_ID,
-            // ✨ 사용자님의 실제 시트 이름인 '시트1'로 수정합니다.
             range: '시트1!A2:C',
         });
         
@@ -60,10 +59,10 @@ export async function POST(req: NextRequest) {
 
         await sheets.spreadsheets.values.append({
             spreadsheetId: process.env.GOOGLE_SHEET_ID,
-            // ✨ 사용자님의 실제 시트 이름인 '시트1'로 수정합니다.
             range: '시트1!A:C',
             valueInputOption: 'USER_ENTERED',
-            resource: {
+            // ✨ 'resource'를 'requestBody'로 수정했습니다.
+            requestBody: {
                 values: [[templateName, subject, body]],
             },
         });
