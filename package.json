@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@tiptap/extension-image": "^3.4.1",
     "@tiptap/extension-link": "^3.4.1",
     "@tiptap/react": "^3.4.1",
