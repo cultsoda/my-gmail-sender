@@ -63,7 +63,7 @@ export default function Home() {
 
   const isRecipientLimitExceeded = recipientCount > MAX_RECIPIENTS;
 
-  const handleGenerateEmail = async () => {
+ const handleGenerateEmail = async () => {
     if (!aiPrompt) {
       alert('이메일 목적을 입력해주세요.');
       return;
@@ -75,12 +75,19 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: aiPrompt, language }),
       });
-      if (!response.ok) { throw new Error('AI 응답 생성에 실패했습니다.'); }
+
+      // [수정됨] 서버에서 보내준 에러 메시지를 확인하는 로직 추가
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'AI 응답 생성에 실패했습니다.');
+      }
+
       const data = await response.json();
       setSubject(data.subject);
       setBody(data.body);
     } catch (error) {
       console.error(error);
+      // 이제 화면에 구체적인 서버 에러 메시지(예: "AI API 키가 설정되지 않았습니다.")가 뜹니다.
       alert(error instanceof Error ? error.message : String(error));
     } finally {
       setIsGenerating(false);
