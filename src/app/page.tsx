@@ -35,6 +35,12 @@ export default function Home() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState('');
 
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setAiPrompt(e.target.value);
+    e.target.style.height = 'auto';
+    e.target.style.height = `${e.target.scrollHeight}px`;
+  };
+
   useEffect(() => {
     if (session) {
       fetch('/api/templates')
@@ -194,14 +200,14 @@ export default function Home() {
               <h2 className="text-xl font-semibold">AI로 이메일 초안 작성하기</h2>
               <div>
                 <label htmlFor="ai-prompt" className="block text-sm font-medium text-gray-300 mb-2">이메일 목적 또는 상황</label>
-                <input
-                  id="ai-prompt"
-                  type="text"
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 text-white"
-                  placeholder="예: 30% 여름 세일 이벤트 안내"
-                />
+                <textarea
+      id="ai-prompt"
+      value={aiPrompt}
+      onChange={handlePromptChange}
+      rows={3}
+      className="w-full p-3 bg-gray-700 border border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 text-white resize-none overflow-hidden"
+      placeholder="예: 고객 문의 내용 (로그인 오류)에 대해 정중하게 사과하고, 해결 방법을 안내하는 답장 작성"
+    />
               </div>
               <div className="flex items-end gap-4">
                 <div className="flex-grow">
